@@ -162,21 +162,39 @@ def process_file(file_path, output_folder, remove_bbox, highlight_text, custom_n
         print(f"\n❌ Error processing {base_fname}: {e}")
         return None
 
-def run_operation(input_path, output_folder, remove_bbox, highlight_text, custom_name):
+def is_pdf(file_path):
+    return file_path.lower().endswith(".pdf")
+
+def run_operation(input_path, output_folder, remove_bbox, highlight_text, custom_name, hits_only=False):
     if not os.path.exists(output_folder): 
         os.makedirs(output_folder)
     
     log_data = []
-    
-    if os.path.isfile(input_path):
-        result = process_file(input_path, output_folder, remove_bbox, highlight_text, custom_name)
-        if result: log_data.append(result)
+    files_to_process = []
+    is_single_file = os.path.isfile(input_path)
+
+    if is_single_file:
+        files_to_process.append(input_path)
     elif os.path.isdir(input_path):
-        files = glob.glob(os.path.join(input_path, "*.pdf"))
-        for file_path in files:
-            result = process_file(file_path, output_folder, remove_bbox, highlight_text, None)
-            if result: log_data.append(result)
-    
+        files_to_process = glob.glob(os.path.join(input_path, "*.pdf"))
+
+    for file_path in files_to_process:
+        result = process_file(file_path, output_folder, remove_bbox, highlight_text, 
+                              custom_name if is_single_file else None)
+        
+        if result:
+            # result = [filename, black_img, white_img, black_vec, white_vec, annots]
+            total_removed = sum(result[1:]) 
+            
+            if hits_only and total_removed == 0:
+                cleanup_path = os.path.join(output_folder, result[0]) 
+                if os.path.exists(cleanup_path):
+                    os.remove(cleanup_path)
+                print(f"🗑️  No redactions found. Output discarded: {result[0]}")
+            else:
+                log_data.append(result)
+
+    # 3. CSV Summary Logic
     if log_data:
         csv_path = os.path.join(output_folder, "summary_of_changes.csv")
         headers = ["Filename", "Black_Images", "White_Images", "Black_Vectors", "White_Vectors", "Annotations"]
@@ -187,14 +205,28 @@ def run_operation(input_path, output_folder, remove_bbox, highlight_text, custom
         print(f"\n📊 Summary CSV saved to: {csv_path}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-i", "--input", type=str)
-    parser.add_argument("-o", "--output", type=str)
-    parser.add_argument("-n", "--name", type=str)
-    parser.add_argument("-b", "--bbox", type=int, default=1)
-    parser.add_argument("--highlight", "--hl", type=int, default=1)
-    args, unknown = parser.parse_known_args()
+    parser = argparse.ArgumentParser(
+        description="PDF Redaction Auditor: Removes vector/image layers to find hidden content.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("-i", "--input", type=str, help="Path to a single PDF file or a folder containing PDFs.")
+    parser.add_argument("-o", "--output", type=str, help="Folder where the cleaned files and summary CSV will be saved.")
+    parser.add_argument("-n", "--name", type=str, help="Custom name for the output file.")
+    parser.add_argument("-b", "--bbox", type=int, default=1, help="Remove black/white vector boxes? (1=Yes, 0=No)")
+    parser.add_argument("--highlight", "--hl", type=int, default=1, help="Highlight recovered text in red? (1=Yes, 0=No)")
+    parser.add_argument("--hits", action="store_true", help="Only save files where redactions were actually found.")
+    # 1. If the user asked for help, show it and KILL the script immediately.
+    if '-h' in sys.argv or '--help' in sys.argv:
+        parser.print_help()
+        sys.exit(0)
 
-    in_path = (args.input if args.input else input("Input Path: ")).strip().replace('"', '')
-    out_dir = (args.output if args.output else input("Output Folder: ")).strip().replace('"', '')
-    run_operation(in_path, out_dir, args.bbox, args.highlight, args.name)
+    args = parser.parse_args()
+
+    # 3. Only ask for inputs if they weren't provided in the command line.
+    in_path = args.input if args.input else input("Input Path: ")
+    in_path = in_path.strip().replace('"', '')
+
+    out_dir = args.output if args.output else input("Output Folder: ")
+    out_dir = out_dir.strip().replace('"', '')
+    
+    run_operation(in_path, out_dir, args.bbox, args.highlight, args.name, hits_only=args.hits)
