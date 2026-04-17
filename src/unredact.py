@@ -154,12 +154,12 @@ def process_file(file_path, output_folder, remove_bbox, highlight_text, custom_n
         new_doc.save(out_path, garbage=3, deflate=False)
         doc.close()
         new_doc.close()
-        print(f"✅ Success: Saved to {out_path}")
+        print(f"Success: Saved to {out_path}")
         
         return [base_fname, stats['black_img'], stats['white_img'], stats['black_vec'], stats['white_vec'], stats['annots']]
         
     except Exception as e:
-        print(f"\n❌ Error processing {base_fname}: {e}")
+        print(f"\nError processing {base_fname}: {e}")
         return None
 
 def is_pdf(file_path):
@@ -190,7 +190,7 @@ def run_operation(input_path, output_folder, remove_bbox, highlight_text, custom
                 cleanup_path = os.path.join(output_folder, result[0]) 
                 if os.path.exists(cleanup_path):
                     os.remove(cleanup_path)
-                print(f"🗑️  No redactions found. Output discarded: {result[0]}")
+                print(f" No redactions found. Output discarded: {result[0]}")
             else:
                 log_data.append(result)
 
@@ -202,7 +202,7 @@ def run_operation(input_path, output_folder, remove_bbox, highlight_text, custom
             writer = csv.writer(f)
             writer.writerow(headers)
             writer.writerows(log_data)
-        print(f"\n📊 Summary CSV saved to: {csv_path}")
+        print(f"\n Summary CSV saved to: {csv_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
