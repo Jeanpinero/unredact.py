@@ -32,35 +32,30 @@ Command Line Arguments:
 python .\src\unredact.py -i <input_path> -o <output_folder> [options]
 ```
 Argument Description:   
--i, --input: to the input PDF file or a folder containing PDFs.  
--o, --output: to the folder where processed files will be saved.  
--n, --name: Custom name for the output file (Single file mode only).  
--b, --bbox1 to remove black box images that aren't flattened on the pdf (default), 0 to keep them.  --hl, --highlight1 to turn recovered text red (default), 0 for black.  
--h, --help: Shows the contents  of this README.Example  
+-i, --input: Path to the input PDF file or a folder containing PDFs.  
+-o, --output: Folder where processed files will be saved.  
+-n, --name: Custom name for the output file (single file mode only).  
+-b, --bbox: 1 to remove black/white box images and vectors that aren't flattened on the pdf (default), 0 to keep them.  
+--hl, --highlight: 1 to turn recovered text red (default), 0 for black.  
+--hits: Only save outputs where redactions were actually found; discard files that came through clean.  
+-h, --help: Show the standard argparse help and exit.  
   
-To process a folder and turn off the red highlighting:  
+Example — process a folder and turn off the red highlighting:  
 ```bash
 cd <project folder>  
 .\venv\Scripts\Activate  
 python unredact.py -i ./input_pdfs -o ./cleaned_pdfs --hl 0  
 ```
-<pre>
-Directory Structure:  
-├── src   
-|    └──unredact.py   
-└── docs/  
-    └── Readme.md  
-    └── requirements.txt  
----  
+## Directory Structure
 
-### 2. requirements.txt  
-
-```text
-pymupdf==1.23.26
-``
-</pre>
-
-
-
-
+```
+├── docs/
+│   ├── LICENSE
+│   ├── ReadMe.md
+│   └── requirements.txt
+├── src/
+│   └── unredact.py
+├── test/
+└── LICENSE
+```
 
